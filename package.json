@@ -1,5 +1,5 @@
 {
-  "name": "universal-queues",
+  "name": "@suissa/universal-queues",
   "version": "1.0.0",
   "description": "Factory universal para mensageria (RabbitMQ, Kafka, SQS) para sistemas distribuídos.",
   "main": "dist/index.js",
