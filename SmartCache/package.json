@@ -1,0 +1,31 @@
+{
+  "name": "@suissa/smart-cache",
+  "version": "1.0.0",
+  "description": "Gerenciador de histórico de conversas em Redis para assistentes LLM.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest --config jest.config.ts",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "redis",
+    "cache",
+    "history",
+    "llm",
+    "chatbot"
+  ],
+  "author": "Suissa",
+  "license": "MIT",
+  "dependencies": {
+    "redis": "^5.7.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^24.1.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.4.0",
+    "typescript": "^5.3.3"
+  }
+}
