@@ -27,12 +27,12 @@ export function Healer(options: HealerOptions = {}): MethodDecorator {
             return await originalMethod.apply(this, args);
           } catch (retryError) {
             await toolkit.reportCapabilities(retryError);
-            return toolkit.fallbackValue(retryError);
+            throw retryError;
           }
         }
 
         await toolkit.reportCapabilities(error);
-        return toolkit.fallbackValue(error);
+        throw error;
       }
     };
 
