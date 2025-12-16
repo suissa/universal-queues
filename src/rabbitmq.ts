@@ -216,21 +216,16 @@ export class RabbitMQClient implements IMessaging {
         await Promise.resolve(subscription.handler(content));
         this.ackMessage(msg);
       } catch (err) {
-        try {
-          await this.pub(
-            'payload.originAgent',
-            '',
-            Tool.createPayload({
-              errors: err,
-              schema: msg.properties?.headers || {},
-              example: { routingKey: msg.fields.routingKey, raw: msg.content.toString() }
-            })
-          );
-        } catch (pubErr) {
-          await this.healer.reportCapabilities(pubErr);
-        } finally {
-          this.nackMessage(msg);
-        }
+        await this.pub(
+          'payload.originAgent',
+          '',
+          Tool.createPayload({
+            errors: err,
+            schema: msg.properties?.headers || {},
+            example: { routingKey: msg.fields.routingKey, raw: msg.content.toString() }
+          })
+        );
+        this.nackMessage(msg);
       }
     });
   }
