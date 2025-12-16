@@ -29,7 +29,6 @@
   "license": "MIT",
   "dependencies": {
     "amqplib": "^0.10.8",
-    "redis": "^5.7.0",
     "ts-node": "^10.9.2"
   },
   "devDependencies": {
