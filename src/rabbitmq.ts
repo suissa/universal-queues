@@ -18,6 +18,21 @@ export class RabbitMQClient implements IMessaging {
   private uri?: string;
   private reconnecting = false;
   private readonly messageBuffer: BufferedMessage[] = [];
+  private readonly topicSubscriptions: {
+    exchange: string;
+    queue: string;
+    routingKey: string;
+    handler: (msg: any) => void;
+  }[] = [];
+  private readonly fanoutSubscriptions: {
+    exchange: string;
+    handler: (msg: any) => void;
+  }[] = [];
+  private readonly deadLetterSubscriptions: {
+    dlqExchange: string;
+    dlqQueue: string;
+    handler: (msg: any) => void;
+  }[] = [];
   private readonly healer = HealingToolkit.global();
 
   @Healer()
@@ -63,33 +78,9 @@ export class RabbitMQClient implements IMessaging {
     routingKey: string,
     handler: (msg: any) => void
   ) {
-    await this.ensureChannel();
-    await this.assertTopicTopology(exchange, routingKey);
-    await this.channel!.assertQueue(queue, {
-      durable: true,
-      deadLetterExchange: `${exchange}.dlq`
-    });
-    await this.channel!.bindQueue(queue, exchange, routingKey);
-
-    this.channel!.consume(queue, async (msg: ConsumeMessage | null) => {
-      if (!msg) return;
-      try {
-        const content = JSON.parse(msg.content.toString());
-        await Promise.resolve(handler(content));
-        this.ackMessage(msg);
-      } catch (err) {
-        await this.pub(
-          'payload.originAgent',
-          '',
-          Tool.createPayload({
-            errors: err,
-            schema: msg.properties?.headers || {},
-            example: { routingKey: msg.fields.routingKey, raw: msg.content.toString() }
-          })
-        );
-        this.nackMessage(msg);
-      }
-    });
+    const subscription = { exchange, queue, routingKey, handler };
+    await this.setupTopicSubscription(subscription);
+    this.topicSubscriptions.push(subscription);
   }
 
   async sub(
@@ -110,17 +101,9 @@ export class RabbitMQClient implements IMessaging {
 
   @Healer()
   async subscribeToFanout(exchange: string, handler: (msg: any) => void) {
-    await this.ensureChannel();
-    await this.channel!.assertExchange(exchange, 'fanout', { durable: true });
-    const q = await this.channel!.assertQueue('', { exclusive: true });
-    await this.channel!.bindQueue(q.queue, exchange, '');
-
-    this.channel!.consume(q.queue, (msg: ConsumeMessage | null) => {
-      if (msg) {
-        handler(JSON.parse(msg.content.toString()));
-        this.ackMessage(msg);
-      }
-    });
+    const subscription = { exchange, handler };
+    await this.setupFanoutSubscription(subscription);
+    this.fanoutSubscriptions.push(subscription);
   }
 
   async publishToOutbox(event: object) {
@@ -133,17 +116,9 @@ export class RabbitMQClient implements IMessaging {
     dlqQueue: string,
     handler: (msg: any) => void
   ) {
-    await this.ensureChannel();
-    await this.channel!.assertExchange(dlqExchange, 'fanout', { durable: true });
-    await this.channel!.assertQueue(dlqQueue, { durable: true });
-    await this.channel!.bindQueue(dlqQueue, dlqExchange, '');
-
-    this.channel!.consume(dlqQueue, (msg: ConsumeMessage | null) => {
-      if (msg) {
-        handler(JSON.parse(msg.content.toString()));
-        this.ackMessage(msg);
-      }
-    });
+    const subscription = { dlqExchange, dlqQueue, handler };
+    await this.setupDeadLetterSubscription(subscription);
+    this.deadLetterSubscriptions.push(subscription);
   }
 
   ackMessage(msg: ConsumeMessage) {
@@ -169,6 +144,7 @@ export class RabbitMQClient implements IMessaging {
     this.connection.on('error', () => this.handleDisconnect());
     this.channel = await this.connection.createChannel();
     this.reconnecting = false;
+    await this.reattachSubscriptions();
     await this.flushBuffer();
   }
 
@@ -216,6 +192,87 @@ export class RabbitMQClient implements IMessaging {
           this.reconnecting = false;
         });
       }, 500);
+    }
+  }
+
+  private async setupTopicSubscription(subscription: {
+    exchange: string;
+    queue: string;
+    routingKey: string;
+    handler: (msg: any) => void;
+  }) {
+    await this.ensureChannel();
+    await this.assertTopicTopology(subscription.exchange, subscription.routingKey);
+    await this.channel!.assertQueue(subscription.queue, {
+      durable: true,
+      deadLetterExchange: `${subscription.exchange}.dlq`
+    });
+    await this.channel!.bindQueue(subscription.queue, subscription.exchange, subscription.routingKey);
+
+    this.channel!.consume(subscription.queue, async (msg: ConsumeMessage | null) => {
+      if (!msg) return;
+      try {
+        const content = JSON.parse(msg.content.toString());
+        await Promise.resolve(subscription.handler(content));
+        this.ackMessage(msg);
+      } catch (err) {
+        await this.pub(
+          'payload.originAgent',
+          '',
+          Tool.createPayload({
+            errors: err,
+            schema: msg.properties?.headers || {},
+            example: { routingKey: msg.fields.routingKey, raw: msg.content.toString() }
+          })
+        );
+        this.nackMessage(msg);
+      }
+    });
+  }
+
+  private async setupFanoutSubscription(subscription: { exchange: string; handler: (msg: any) => void }) {
+    await this.ensureChannel();
+    await this.channel!.assertExchange(subscription.exchange, 'fanout', { durable: true });
+    const q = await this.channel!.assertQueue('', { exclusive: true });
+    await this.channel!.bindQueue(q.queue, subscription.exchange, '');
+
+    this.channel!.consume(q.queue, (msg: ConsumeMessage | null) => {
+      if (msg) {
+        subscription.handler(JSON.parse(msg.content.toString()));
+        this.ackMessage(msg);
+      }
+    });
+  }
+
+  private async setupDeadLetterSubscription(subscription: {
+    dlqExchange: string;
+    dlqQueue: string;
+    handler: (msg: any) => void;
+  }) {
+    await this.ensureChannel();
+    await this.channel!.assertExchange(subscription.dlqExchange, 'fanout', { durable: true });
+    await this.channel!.assertQueue(subscription.dlqQueue, { durable: true });
+    await this.channel!.bindQueue(subscription.dlqQueue, subscription.dlqExchange, '');
+
+    this.channel!.consume(subscription.dlqQueue, (msg: ConsumeMessage | null) => {
+      if (msg) {
+        subscription.handler(JSON.parse(msg.content.toString()));
+        this.ackMessage(msg);
+      }
+    });
+  }
+
+  private async reattachSubscriptions() {
+    for (const subscription of this.topicSubscriptions) {
+      await this.setupTopicSubscription(subscription);
+    }
+
+    for (const subscription of this.fanoutSubscriptions) {
+      await this.setupFanoutSubscription(subscription);
+    }
+
+    for (const subscription of this.deadLetterSubscriptions) {
+      await this.setupDeadLetterSubscription(subscription);
     }
   }
 }
