@@ -1,3 +1,33 @@
+<<<<<<< HEAD:tests/history.redis.spec.ts
+jest.mock('../src/clients/redis', () => {
+  const store = new Map<string, string>();
+  const redisMock = {
+    on: jest.fn(),
+    isOpen: true,
+    connect: jest.fn(),
+    get: jest.fn((key: string) => Promise.resolve(store.get(key) ?? null)),
+    set: jest.fn((key: string, value: string) => {
+      store.set(key, value);
+      return Promise.resolve('OK');
+    }),
+    del: jest.fn((key: string) => {
+      const existed = store.delete(key);
+      return Promise.resolve(existed ? 1 : 0);
+    })
+  };
+  return { redis: redisMock };
+});
+
+import { HistoryFactory } from '../src/index';
+
+// Pode usar outro número se quiser
+const numero = '5515999999999';
+
+describe('RedisHistory', () => {
+  const history = HistoryFactory.create('redis');
+
+  beforeEach(async () => {
+=======
 import { SmartCache } from '../src/index';
 
 class FakeRedisClient {
@@ -36,6 +66,7 @@ describe('RedisHistory (SmartCache)', () => {
   });
 
   afterAll(async () => {
+>>>>>>> main:SmartCache/tests/history.spec.ts
     await history.clearHistory(numero);
   });
 
@@ -52,7 +83,11 @@ describe('RedisHistory (SmartCache)', () => {
   it('deve salvar e recuperar histórico manualmente', async () => {
     const fakeHistory = [
       { role: 'user', content: 'Início' },
+<<<<<<< HEAD:tests/history.redis.spec.ts
+      { role: 'assistant', content: 'Olá' }
+=======
       { role: 'assistant', content: 'Olá' },
+>>>>>>> main:SmartCache/tests/history.spec.ts
     ];
     await history.saveHistory(numero, fakeHistory);
 
