@@ -1,18 +1,25 @@
 # NATS Core servers
 
-Este diretório contém três implementações de referência do mesmo contrato de servidor **NATS Core**:
+Este diretório contém dez implementações de referência do mesmo contrato de servidor **NATS Core**:
 
 - `nats-rust/src/main.rs` — servidor TCP nativo em Rust, com entrypoint extra para smoke test em WASI/WASM.
 - `nats-zig/server.zig` — servidor TCP nativo em Zig.
 - `nats-jai/server.jai` — servidor TCP nativo em Jai.
+- `nats-go/main.go` — servidor TCP nativo em Go.
+- `nats-c/server.c` — servidor TCP nativo em C.
+- `nats-cpp/server.cpp` — servidor TCP nativo em C++.
+- `nats-haskell/Main.hs` — servidor TCP nativo em Haskell.
+- `nats-odin/server.odin` — servidor TCP nativo em Odin.
+- `nats-curry/server.curry` — servidor TCP em Curry.
+- `nats-mojo/server.mojo` — servidor Mojo usando interop Python para sockets.
 
-Todas seguem a especificação comum em [`../docs/nats-core-server-spec.md`](../docs/nats-core-server-spec.md). Para começar pelo caminho mais curto, veja também [`../QUICKSTART.md`](../QUICKSTART.md). A ideia é que clientes NATS comuns consigam usar publish/subscribe, queue groups e request/reply contra qualquer uma das três implementações sem mudar o código do cliente.
+Todas seguem a especificação comum em [`../docs/nats-core-server-spec.md`](../docs/nats-core-server-spec.md). Para começar pelo caminho mais curto, veja também [`../QUICKSTART.md`](../QUICKSTART.md). A ideia é que clientes NATS comuns consigam usar publish/subscribe, queue groups e request/reply contra qualquer uma das dez implementações sem mudar o código do cliente.
 
 > Escopo: isto é NATS Core. JetStream, clustering, gateways/leafnodes, TLS, contas/JWT/NKey, WebSocket/MQTT e endpoints HTTP de monitoramento estão fora do escopo destas implementações de referência.
 
 ## Recursos implementados
 
-| Recurso | Rust | Zig | Jai |
+| Recurso | Rust/Zig/Jai | Go/C/C++ | Haskell/Odin/Curry/Mojo |
 | --- | --- | --- | --- |
 | TCP listener em `0.0.0.0:4222` por padrão | ✅ | ✅ | ✅ |
 | `INFO` inicial com `headers` e `max_payload` | ✅ | ✅ | ✅ |
@@ -34,6 +41,7 @@ Todas seguem a especificação comum em [`../docs/nats-core-server-spec.md`](../
 - **Rust + Cargo** para `nats:rust:*`.
 - **Zig** no `PATH` para `nats:zig:*`.
 - **Jai** no `PATH` para `nats:jai:*`.
+- **Go, gcc, g++, GHC, Odin, PAKCS/KiCS2 e Mojo** para compilar/benchmarkar as implementações adicionais.
 - Opcional: **NATS CLI** (`nats`) para testar manualmente com um cliente real.
 
 ## Scripts npm
@@ -114,13 +122,14 @@ Importante: o servidor TCP completo é nativo, porque WASI preview 1 não fornec
 
 ## Benchmark
 
-Use `npm run run:benchmark` para rodar, uma implementação por vez, um teste de carga e um teste de stress. Por padrão cada fase dura 2 minutos; durante desenvolvimento, reduza com `BENCH_DURATION_SECONDS=5 npm run run:benchmark`. O runner compila e executa Rust, Zig e Jai quando as respectivas toolchains estão disponíveis, e pula automaticamente as que não estiverem instaladas.
+Use `npm run run:benchmark` para rodar, uma implementação por vez, um teste de carga e um teste de stress. Por padrão cada fase dura 2 minutos; durante desenvolvimento, reduza com `BENCH_DURATION_SECONDS=5 npm run run:benchmark`. O runner compila e executa Rust, Zig, Jai, Go, C, C++, Haskell, Odin, Curry e Mojo quando as respectivas toolchains estão disponíveis, e pula automaticamente as que não estiverem instaladas.
 
 ## Portas usadas pelos testes
 
 - Rust smoke test: `44222`; benchmark: `45222`.
 - Zig smoke test: `44223`; benchmark: `45223`.
 - Jai smoke test: `44224`; benchmark: `45224`.
+- Go/C/C++/Haskell/Odin/Curry/Mojo benchmark: `45225` a `45231`.
 - Execução manual: `4222` por padrão, ou a porta passada como primeiro argumento.
 
 Se uma dessas portas já estiver em uso, altere temporariamente o comando no `package.json` ou rode o servidor manualmente em outra porta.

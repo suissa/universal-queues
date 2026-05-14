@@ -29,6 +29,55 @@ const servers = [
     build: ['bash', '-lc', 'cd servers/nats-jai && jai server.jai'],
     run: ['servers/nats-jai/server'],
   },
+  {
+    name: 'go',
+    port: 45225,
+    check: ['go', 'version'],
+    build: ['bash', '-lc', 'cd servers/nats-go && go build -o nats-go .'],
+    run: ['servers/nats-go/nats-go'],
+  },
+  {
+    name: 'c',
+    port: 45226,
+    check: ['gcc', '--version'],
+    build: ['gcc', '-std=gnu11', '-O2', '-Wall', '-Wextra', '-pthread', '-o', 'servers/nats-c/nats-c', 'servers/nats-c/server.c'],
+    run: ['servers/nats-c/nats-c'],
+  },
+  {
+    name: 'cpp',
+    port: 45227,
+    check: ['g++', '--version'],
+    build: ['g++', '-std=c++17', '-O2', '-Wall', '-Wextra', '-o', 'servers/nats-cpp/nats-cpp', 'servers/nats-cpp/server.cpp'],
+    run: ['servers/nats-cpp/nats-cpp'],
+  },
+  {
+    name: 'haskell',
+    port: 45228,
+    check: ['ghc', '--version'],
+    build: ['ghc', '-threaded', '-O2', '-iservers/nats-haskell', 'servers/nats-haskell/Main.hs', '-o', 'servers/nats-haskell/nats-haskell'],
+    run: ['servers/nats-haskell/nats-haskell'],
+  },
+  {
+    name: 'odin',
+    port: 45229,
+    check: ['odin', 'version'],
+    build: ['odin', 'build', 'servers/nats-odin', '-out:servers/nats-odin/nats-odin'],
+    run: ['servers/nats-odin/nats-odin'],
+  },
+  {
+    name: 'curry',
+    port: 45230,
+    check: ['pakcs', '--version'],
+    build: ['pakcs', ':load', 'servers/nats-curry/server.curry', ':save', 'nats-curry'],
+    run: ['servers/nats-curry/nats-curry'],
+  },
+  {
+    name: 'mojo',
+    port: 45231,
+    check: ['mojo', '--version'],
+    build: ['mojo', 'build', 'servers/nats-mojo/server.mojo', '-o', 'servers/nats-mojo/nats-mojo'],
+    run: ['servers/nats-mojo/nats-mojo'],
+  },
 ];
 
 console.log('NATS benchmark configuration');
@@ -311,7 +360,10 @@ function readExact(socket, size) {
 }
 
 function onceDrain(socket) {
-  return new Promise((resolve) => socket.once('drain', resolve));
+  return Promise.race([
+    new Promise((resolve) => socket.once('drain', resolve)),
+    sleep(100),
+  ]);
 }
 
 function sleep(ms) {
