@@ -6,7 +6,7 @@ Este diretório contém três implementações de referência do mesmo contrato 
 - `nats-zig/server.zig` — servidor TCP nativo em Zig.
 - `nats-jai/server.jai` — servidor TCP nativo em Jai.
 
-Todas seguem a especificação comum em [`../docs/nats-core-server-spec.md`](../docs/nats-core-server-spec.md). A ideia é que clientes NATS comuns consigam usar publish/subscribe, queue groups e request/reply contra qualquer uma das três implementações sem mudar o código do cliente.
+Todas seguem a especificação comum em [`../docs/nats-core-server-spec.md`](../docs/nats-core-server-spec.md). Para começar pelo caminho mais curto, veja também [`../QUICKSTART.md`](../QUICKSTART.md). A ideia é que clientes NATS comuns consigam usar publish/subscribe, queue groups e request/reply contra qualquer uma das três implementações sem mudar o código do cliente.
 
 > Escopo: isto é NATS Core. JetStream, clustering, gateways/leafnodes, TLS, contas/JWT/NKey, WebSocket/MQTT e endpoints HTTP de monitoramento estão fora do escopo destas implementações de referência.
 
@@ -38,7 +38,7 @@ Todas seguem a especificação comum em [`../docs/nats-core-server-spec.md`](../
 
 ## Scripts npm
 
-Cada implementação possui três scripts principais: compilar, subir o servidor e testar. O teste automatizado sobe o servidor em uma porta temporária, conecta dois sockets como clientes NATS, valida `INFO`, `CONNECT`, `SUB`, `PING`, `PUB` e a entrega `MSG`, e encerra o processo.
+Cada implementação possui três scripts principais: compilar, subir o servidor e testar. A raiz do projeto também possui atalhos `run:rust`, `run:rust:wasm`, `run:zig`, `run:jai` e `run:benchmark`. O teste automatizado sobe o servidor em uma porta temporária, conecta dois sockets como clientes NATS, valida `INFO`, `CONNECT`, `SUB`, `PING`, `PUB` e a entrega `MSG`, e encerra o processo.
 
 ### Rust
 
@@ -112,11 +112,15 @@ O script `npm run nats:rust:wasm` compila o Rust para `wasm32-wasip1` e executa 
 
 Importante: o servidor TCP completo é nativo, porque WASI preview 1 não fornece sockets TCP portáveis. O binário WASM executa um smoke test dos helpers compartilhados de protocolo, especialmente matching de subjects e limites, para garantir que o mesmo código Rust também compila e roda em WASI.
 
+## Benchmark
+
+Use `npm run run:benchmark` para rodar, uma implementação por vez, um teste de carga e um teste de stress. Por padrão cada fase dura 2 minutos; durante desenvolvimento, reduza com `BENCH_DURATION_SECONDS=5 npm run run:benchmark`. O runner compila e executa Rust, Zig e Jai quando as respectivas toolchains estão disponíveis, e pula automaticamente as que não estiverem instaladas.
+
 ## Portas usadas pelos testes
 
-- Rust smoke test: `44222`.
-- Zig smoke test: `44223`.
-- Jai smoke test: `44224`.
+- Rust smoke test: `44222`; benchmark: `45222`.
+- Zig smoke test: `44223`; benchmark: `45223`.
+- Jai smoke test: `44224`; benchmark: `45224`.
 - Execução manual: `4222` por padrão, ou a porta passada como primeiro argumento.
 
 Se uma dessas portas já estiver em uso, altere temporariamente o comando no `package.json` ou rode o servidor manualmente em outra porta.
