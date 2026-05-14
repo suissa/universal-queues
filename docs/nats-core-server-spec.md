@@ -1,9 +1,10 @@
 # Universal Queues NATS Core Server Specification
 
-This repository ships two independent implementations of the same NATS Core protocol subset:
+This repository ships three independent implementations of the same NATS Core protocol subset:
 
 - `servers/nats-zig/server.zig`
 - `servers/nats-jai/server.jai`
+- `servers/nats-rust/src/main.rs`
 
 The goal is wire compatibility with ordinary NATS clients for Core NATS publish/subscribe, queue groups, and request/reply. The implementations intentionally do **not** implement JetStream persistence, clustering/gateways/leafnodes, TLS, accounts, JWT/NKey authentication, monitoring endpoints, MQTT/WebSocket adapters, or configuration reloads.
 

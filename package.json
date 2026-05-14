@@ -7,7 +7,25 @@
   "scripts": {
     "build": "tsc",
     "test": "jest --config jest.config.ts",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "run:rust": "npm run nats:rust:build && cargo run --manifest-path servers/nats-rust/Cargo.toml --",
+    "run:rust:wasm": "npm run nats:rust:wasm",
+    "run:zig": "npm run nats:zig:build && servers/nats-zig/nats-zig",
+    "run:jai": "npm run nats:jai:build && servers/nats-jai/server",
+    "run:benchmark": "node scripts/benchmark-nats-servers.mjs",
+    "nats:rust:build": "cargo build --manifest-path servers/nats-rust/Cargo.toml",
+    "nats:rust:start": "cargo run --manifest-path servers/nats-rust/Cargo.toml --",
+    "nats:rust:test": "cargo test --manifest-path servers/nats-rust/Cargo.toml && node scripts/smoke-nats-server.mjs --port 44222 -- cargo run --manifest-path servers/nats-rust/Cargo.toml -- 44222",
+    "nats:rust:wasm": "rustup target add wasm32-wasip1 && cargo build --manifest-path servers/nats-rust/Cargo.toml --target wasm32-wasip1 --bin nats-rust && node scripts/run-nats-rust-wasm.mjs",
+    "nats:zig:build": "zig build-exe servers/nats-zig/server.zig -femit-bin=servers/nats-zig/nats-zig",
+    "nats:zig:start": "zig run servers/nats-zig/server.zig --",
+    "nats:zig:test": "node scripts/smoke-nats-server.mjs --port 44223 -- zig run servers/nats-zig/server.zig -- 44223",
+    "nats:jai:build": "cd servers/nats-jai && jai server.jai",
+    "nats:jai:start": "servers/nats-jai/server",
+    "nats:jai:test": "npm run nats:jai:build && node scripts/smoke-nats-server.mjs --port 44224 -- servers/nats-jai/server 44224",
+    "rust:nats:build": "npm run nats:rust:build",
+    "rust:nats:test": "npm run nats:rust:test",
+    "rust:nats:wasm": "npm run nats:rust:wasm"
   },
   "repository": {
     "type": "git",
